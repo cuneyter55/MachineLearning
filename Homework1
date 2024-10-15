@@ -1,0 +1,56 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# CSV dosyasından veri okuma
+data = pd.read_csv('D:/masaüstü/ev.csv')
+
+# Sütun adlarını temizle (eğer boşluk varsa)
+data.columns = data.columns.str.strip()
+
+# Sütun adlarını kontrol et (yine güvenli tarafta olalım)
+print("Veri Kümesindeki Sütunlar:")
+print(data.columns)
+
+# Bağımsız değişken olarak 'area', bağımlı değişken olarak 'price' sütunlarını alıyoruz
+X_orig = data[['area']].values  # 'area' sütunu
+Y = data[['price']].values  # 'price' sütunu
+X = (X_orig - np.mean(X_orig)) / np.std(X_orig)
+# Veriyi normalize et (gerekirse)
+X = (X - np.mean(X)) / np.std(X)
+
+# Bias terimini ekleme (x0 = 1 tüm örnekler için)
+X_b = np.c_[np.ones((len(X), 1)), X]  # Her örneğe x0 = 1 ekle
+
+# Gradient Descent fonksiyonu
+def gradient_descent(X, y, learning_rate=0.01, n_iterations=1000):
+    m = len(X)
+    theta = np.random.randn(2, 1)  # Rastgele başlatma
+    for iteration in range(n_iterations):
+        gradients = 2/m * X.T.dot(X.dot(theta) - y)
+        theta -= learning_rate * gradients
+    return theta
+
+# Gradient Descent çalıştırma
+learning_rate = 0.01  # Öğrenme oranını düşük tutuyoruz
+n_iterations = 1000
+theta_optimal = gradient_descent(X_b, Y, learning_rate, n_iterations)
+
+# Grafik çiziminde orijinal X'i kullan
+plt.scatter(X_orig, Y, color="blue", label="Veri noktaları")
+
+# Regresyon çizgisini çizme (X'in tüm aralığını kullanarak çizgi hesapla)
+X_line = np.linspace(min(X_orig), max(X_orig), 100).reshape(-1, 1)  # X aralığında 100 nokta alıyoruz
+X_line_norm = (X_line - np.mean(X_orig)) / np.std(X_orig)  # Normalleştirilmiş X için
+X_line_b = np.c_[np.ones((len(X_line_norm), 1)), X_line_norm]  # Bias terimi ekliyoruz
+Y_line = X_line_b.dot(theta_optimal)  # Regresyon çizgisini hesapla
+
+plt.plot(X_line, Y_line, color="red", label="Regresyon çizgisi")
+plt.xlabel("Area (Metrekare)")
+plt.ylabel("Price (Fiyat)")
+plt.legend()
+plt.title(f"GDA ile Doğrusal Regresyon (lr={learning_rate})")
+plt.show()
+
+print(f"Optimal Theta Değerleri: {theta_optimal}")
+
